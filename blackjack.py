@@ -232,9 +232,9 @@ def main():
         # Player's turn
         while not done:
             try:
-                action = int(input("Do you want to 0.hit, 1.stand, 2.double, 3.split?\n> "))
-                done, reward = game.play(action)
-                if action != 1:
+                action = int(input("Do you want to 1.hit, 2.stand, 3.double, 4.split?\n> "))
+                done, reward = game.play(action-1)
+                if action != 2:
                     game.player.display("Player", False)
 
             except ValueError:

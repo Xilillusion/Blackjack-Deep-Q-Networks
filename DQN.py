@@ -92,7 +92,7 @@ class DQNAgent:
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
     
-    def save_model(self, path="blackjack.pth"):
+    def save_model(self, path="blackjack_dqn.pth"):
         torch.save({
             'model_state_dict': self.model.state_dict(),
             'target_model_state_dict': self.target_model.state_dict(),
@@ -100,7 +100,7 @@ class DQNAgent:
         }, path)
         print(f"Model saved to {path}")
     
-    def load_model(self, path="blackjack.pth"):
+    def load_model(self, path="blackjack_dqn.pth"):
         import os
         if os.path.exists(path):
             checkpoint = torch.load(path)
@@ -114,17 +114,12 @@ class DQNAgent:
             print("Model file not found. Starting with a new model.")
 
 
-def encode_state(player_points, revealed_card):
+def encode_state(player_points, upcard):
     """
-    Encode the game state to [player_low, player_high, dealer_low, dealer_high]
+    Encode the game state to [player_low, player_high, upcard_low]
     Low counts all Aces as 1, High counts one Ace as 11 if possible
     """
-    if revealed_card == 1:
-        dealer_points = [1, 11]
-    else:
-        dealer_points = [revealed_card, revealed_card]
-    
-    return player_points + dealer_points
+    return player_points.append(upcard)
 
 
 def train(agent, game, episodes=30000):
@@ -164,8 +159,6 @@ def train(agent, game, episodes=30000):
                     break
 
             agent.replay()
-    
-    return agent
 
 
 def test(agent, game, episodes=50000):
@@ -212,8 +205,8 @@ if __name__ == "__main__":
     deck = deck_type(deck_amount)
     game = game_type(deck)
 
-    state_size = 4     # 2 player points + 2 dealer points
-    action_size = 2     # 2 actions: hit, stand
+    state_size = 3     # [player_low, player_high, upcard_low]
+    action_size = 3     # 3 actions: hit, stand, double
     agent = DQNAgent(state_size, action_size)
     
     #agent.load_model()
