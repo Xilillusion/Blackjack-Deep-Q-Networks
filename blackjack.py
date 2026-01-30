@@ -134,17 +134,18 @@ class EuropeGame:
 
     def play(self, action):
         if action == 0:  # hit
+            self.can_double = False
             return self._player_hit()
         elif action == 1:  # stand
             return self._player_stand()
-        elif action == 2 and len(self.player.hand) == 2:  # double
+        elif action == 2 and self.can_double:  # double
             self.can_double = False
             self.multiplier = 2
             return self._player_hit()
-        elif action == 3 and len(self.player.hand) == 2 and self.player.hand[0] == self.player.hand[1]:    # split
+        elif action == 3:    # split
             raise NotImplementedError
         else:
-            raise ValueError(f"Illegal action {action}")
+            raise ValueError(f"Illegal action {action+1}")
 
 class AmericaGame(EuropeGame):
     """
