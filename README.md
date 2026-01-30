@@ -1,8 +1,8 @@
 # Blackjack-Deep-Q-Networks
 
-The average reward is around -0.046 while using 1 deck of cards. Not able to double split.
+The average reward is around -0.025 while using 1 deck of cards. Not able to double split.
 
-i.e. lose 4.6 cents every 1 dollar.
+i.e. lose 2.5 cents every 1 dollar.
 
 - `train.py`: train and test the non-counting-card models
 - `blackjack.py`: a rough version of Blackjack. Able to play manually

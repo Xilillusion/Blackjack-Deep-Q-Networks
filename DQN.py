@@ -119,7 +119,7 @@ def encode_state(player_points, upcard):
     Encode the game state to [player_low, player_high, upcard_low]
     Low counts all Aces as 1, High counts one Ace as 11 if possible
     """
-    return player_points.append(upcard)
+    return player_points + [upcard]
 
 
 def train(agent, game, episodes=30000):
@@ -206,7 +206,7 @@ if __name__ == "__main__":
     game = game_type(deck)
 
     state_size = 3     # [player_low, player_high, upcard_low]
-    action_size = 3     # 3 actions: hit, stand, double
+    action_size = 2     # 3 actions: hit, stand, double
     agent = DQNAgent(state_size, action_size)
     
     #agent.load_model()
