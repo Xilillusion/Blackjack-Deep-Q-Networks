@@ -206,7 +206,7 @@ if __name__ == "__main__":
     game = game_type(deck)
 
     state_size = 3     # [player_low, player_high, upcard_low]
-    action_size = 2     # 3 actions: hit, stand, double
+    action_size = 2     # 3 actions: hit, stand
     agent = DQNAgent(state_size, action_size)
     
     #agent.load_model()

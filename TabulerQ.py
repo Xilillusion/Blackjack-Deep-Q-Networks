@@ -24,15 +24,11 @@ class TabularQAgent:
     def remember(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done))
 
-    def act(self, state, can_double):
+    def act(self, state):
         if random.random() <= self.epsilon:
-            if can_double:
-                return random.randrange(self.action_size)
             return random.randrange(self.action_size-1)
         q_values = self.q_table[state]
 
-        if can_double:
-            return int(max(range(self.action_size), key=lambda a: q_values[a]))
         return int(max(range(self.action_size-1), key=lambda a: q_values[a]))
 
     def replay(self):
@@ -97,7 +93,7 @@ def train(agent, game, episodes=500000):
             state = encode_state(game.player.points, upcard)
 
             while not done:
-                action = agent.act(state, game.can_double)
+                action = agent.act(state)
 
                 done, reward = game.play(action)
 
@@ -135,7 +131,7 @@ def test(agent, game, episodes=50000):
             state = encode_state(game.player.points, upcard)
 
             while not done:
-                action = agent.act(state, game.can_double)
+                action = agent.act(state)
 
                 done, reward = game.play(action)
                 next_state = encode_state(game.player.points, upcard)
