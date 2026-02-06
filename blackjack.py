@@ -1,7 +1,7 @@
 import random
 
 class Deck:
-    def __init__(self, amount=1):
+    def __init__(self, amount=2):
         self.amount = amount
         self.reset()
         
@@ -12,7 +12,7 @@ class Deck:
         random.shuffle(self.pile)
 
     def deal(self):
-        # Draw a card from the draw pile
+        # Draw a card from the deck
         return self.pile.pop()
 
 class InfiniteDeck:
@@ -23,26 +23,46 @@ class InfiniteDeck:
         pass
 
     def deal(self):
-        # Draw a card from the draw pile
+        # Draw a card from the deck
         return random.choice(self.pile)
 
-class CountingDeck(Deck):
-    def __init__(self, amount=1):
-        super().__init__(amount=amount)
+class ShuffleDeck:
+    def __init__(self, amount=2, thershold=0.2, cut=True):
+        self.amount = amount
+
+        self.thers_idx = round(52 * amount * thershold)
+        self.cut = cut
+        
+        self._create()
+    
+    def _create(self):
+        # Create a new deck and shuffle it
+        a_deck = list(range(1,10))*4 + [10]*16
+        self.pile = a_deck * self.amount
+        random.shuffle(self.pile)
+
+        self.card_left = 52 * self.amount
     
     def reset(self):
-        super().reset()
-        self.card_counts = [4*self.amount for _ in range(1, 10)] + [16*self.amount]   # 4 1-9, 16 10+
-        self.card_sum = 52 * self.amount
+        cut_idx = random.randint(1, 52 * self.amount) if self.cut else 0
+        if self.card_left <= max(self.thers_idx, cut_idx):
+            self._create()
+    
+    def deal(self):
+        self.card_left -= 1
+        return self.pile.pop()
+
+class CountingDeck(ShuffleDeck):
+    def _create(self):
+        super()._create()
+        self.card_counts = [4*self.amount for _ in range(9)] + [16*self.amount]   # 4 1-9, 16 10+
 
     @property
     def probabilities(self):
-        return [i / self.card_sum for i in self.card_counts]
+        return [i / self.card_left for i in self.card_counts]
     
-    def update_counts(self, hand):
-        for card in hand:
-            self.card_counts[card - 1] -= 1
-            self.card_sum -= 1
+    def update_counts(self, card):
+        self.card_counts[card - 1] -= 1
 
 class Hand:
     def __init__(self):
@@ -76,13 +96,7 @@ class EuropeGame:
     """
     def __init__(self, deck):
         self.deck = deck
-        self.multiplier = 1
-
-        self.can_double = True
-        self.can_split = True
-
-        self.player = Hand()
-        self.dealer = Hand()
+        self.reset()
     
     def reset(self):
         self.deck.reset()
@@ -152,9 +166,6 @@ class AmericaGame(EuropeGame):
     Peek: Player loses immediately if dealer has blackjack on initial deal
     H17: Dealer hits on soft 17
     """
-    def __init__(self, deck):
-        super().__init__(deck)
-    
     def init_deal(self):
         done, reward = super().init_deal()
         if done:
@@ -204,7 +215,7 @@ class State:
         self.state[idx] += 1
 
 def main():
-    deck_type = Deck # InfiniteDeck CountingDeck
+    deck_type = Deck # InfiniteDeck ShuffleDeck
     game_type = EuropeGame # AmericaGame
     deck_amount = 1
 

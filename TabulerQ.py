@@ -3,7 +3,7 @@ import pickle
 from tqdm import tqdm
 from collections import deque, defaultdict
 
-from blackjack import Deck, InfiniteDeck, EuropeGame, AmericaGame
+from blackjack import Deck, InfiniteDeck, ShuffleDeck, EuropeGame, AmericaGame
 
 
 class TabularQAgent:
@@ -19,14 +19,23 @@ class TabularQAgent:
         self.batch_size = 64
 
         self.q_table = defaultdict(lambda: [0.0] * self.action_size)
-        self.train_step = 0
 
     def remember(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done))
 
-    def act(self, state):
+    def act(self, state, can_double):
+        # Apply rules to reduce inference
+        hard = state[0][1]
+        if hard < 12 and not can_double:
+            return 0  # hit
+        elif hard == 21:
+            return 1  # stand
+
         if random.random() <= self.epsilon:
-            return random.randrange(self.action_size-1)
+            if can_double:
+                return random.randrange(self.action_size)
+            return random.randrange(self.action_size - 1)
+        
         q_values = self.q_table[state]
 
         return int(max(range(self.action_size-1), key=lambda a: q_values[a]))
@@ -42,11 +51,10 @@ class TabularQAgent:
             current = self.q_table[state][action]
             self.q_table[state][action] = current + self.learning_rate * (target - current)
 
-        self.train_step += 1
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
 
-    def save_model(self, path="blackjack_tabular_q.pkl"):
+    def save_model(self, path):
         with open(path, "wb") as f:
             pickle.dump({
                 "q_table": dict(self.q_table),
@@ -54,7 +62,7 @@ class TabularQAgent:
             }, f)
         print(f"Model saved to {path}")
 
-    def load_model(self, path="blackjack_tabular_q.pkl"):
+    def load_model(self, path):
         import os
         if os.path.exists(path):
             with open(path, "rb") as f:
@@ -74,7 +82,7 @@ def encode_state(player_points, upcard):
     return tuple(player_points + [upcard])
 
 
-def train(agent, game, episodes=500000):
+def train(agent, game, episodes=30000):
     reward_history = deque(maxlen=10000)
 
     with tqdm(total=episodes, desc="Training") as pbar:
@@ -93,7 +101,7 @@ def train(agent, game, episodes=500000):
             state = encode_state(game.player.points, upcard)
 
             while not done:
-                action = agent.act(state)
+                action = agent.act(state, game.can_double)
 
                 done, reward = game.play(action)
 
@@ -131,7 +139,7 @@ def test(agent, game, episodes=50000):
             state = encode_state(game.player.points, upcard)
 
             while not done:
-                action = agent.act(state)
+                action = agent.act(state, game.can_double)
 
                 done, reward = game.play(action)
                 next_state = encode_state(game.player.points, upcard)
@@ -147,17 +155,18 @@ def test(agent, game, episodes=50000):
 if __name__ == "__main__":
     deck_type = Deck  # InfiniteDeck CountingDeck
     game_type = EuropeGame  # AmericaGame
-    deck_amount = 1
 
-    deck = deck_type(deck_amount)
+    deck = deck_type()
     game = game_type(deck)
 
     state_size = 3     # [player_low, player_high, upcard_low]
     action_size = 3    # hit, stand, double
     agent = TabularQAgent(state_size, action_size)
 
-    # agent.load_model()
-    train(agent, game)
-    # agent.save_model()
-    # agent.load_model()
+    #agent.load_model("tabular_q.pkl")
+    train(agent, game, episodes=300000)
+    deck.amount = 6
+    deck.reset()
+    train(agent, game, episodes=100000)
     test(agent, game)
+    #agent.save_model("tabular_q.pkl")

@@ -5,7 +5,7 @@ import random
 from tqdm import tqdm
 from collections import deque
 
-from blackjack import Deck, InfiniteDeck, ShuffleDeck, EuropeGame, AmericaGame
+from blackjack import CountingDeck, EuropeGame, AmericaGame
 
 
 class FNN(nn.Module):
@@ -124,7 +124,7 @@ def encode_state(game, upcard):
     Encode the game state to [player_low, player_high, upcard_low]
     Low counts all Aces as 1, High counts one Ace as 11 if possible
     """
-    return game.player.points + [upcard]
+    return game.player.points + [upcard] + game.deck.probabilities
 
 
 def train(agent, game, episodes=30000):
@@ -203,20 +203,19 @@ def test(agent, game, episodes=50000):
 
 
 if __name__ == "__main__":
-    deck_type = Deck # InfiniteDeck CountingDeck
     game_type = EuropeGame # AmericaGame
 
-    deck = deck_type()
+    deck = CountingDeck()
     game = game_type(deck)
 
-    state_size = 3     # [player_low, player_high, upcard_low]
+    state_size = 13     # [player_low, player_high, upcard_low, probabilies of 10 cards]
     action_size = 3     # 3 actions: hit, stand, double
     agent = DQNAgent(state_size, action_size)
     
-    #agent.load_model("dqn.pth")
+    #agent.load_model("dqn_count.pth")
     train(agent, game)
     deck.amount = 6
     deck.reset()
     train(agent, game, episodes=10000)
     test(agent, game)
-    #agent.save_model("dqn.pth")
+    #agent.save_model("dqn_count.pth")
